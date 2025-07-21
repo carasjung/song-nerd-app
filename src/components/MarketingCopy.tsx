@@ -67,7 +67,7 @@ export default function MarketingCopy({ songData }: MarketingCopyProps) {
         <button
           onClick={generateNewCopy}
           disabled={isGenerating}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
         >
           {isGenerating ? (
             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -85,7 +85,7 @@ export default function MarketingCopy({ songData }: MarketingCopyProps) {
               <h3 className="text-lg font-semibold text-gray-900">{item.platform}</h3>
               <button
                 onClick={() => copyToClipboard(item.copy, index)}
-                className="flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
               >
                 {copiedIndex === index ? (
                   <>

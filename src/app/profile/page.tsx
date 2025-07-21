@@ -70,7 +70,7 @@ export default function Profile() {
           </div>
           
           <div className="mt-8 flex justify-end">
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
               Save Changes
             </button>
           </div>

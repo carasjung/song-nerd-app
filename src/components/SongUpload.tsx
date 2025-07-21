@@ -4,6 +4,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Music, AlertCircle, Loader } from 'lucide-react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { songAPI } from '@/services/api';
 
@@ -142,56 +143,58 @@ export default function SongUpload({ onUploadSuccess }: SongUploadProps) {
   });
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Song Nerd
-        </h1>
-        <p className="text-xl text-gray-600">
+    <div className="upload-container">
+      <div className="upload-subtitle">
+        <p>
           Get AI-powered marketing insights for your music
         </p>
       </div>
 
       {/* Metadata Form */}
-      <div className="mb-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="upload-form">
+        <div className="upload-form-grid">
+          <div className="upload-form-group">
+            <label className="upload-label">
               Song Title
             </label>
             <input
               type="text"
               value={songMetadata.title}
               onChange={(e) => setSongMetadata(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="upload-input"
               placeholder="Enter song title"
               disabled={uploading}
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="upload-form-group">
+            <label className="upload-label">
               Artist Name
             </label>
             <input
               type="text"
               value={songMetadata.artist_name}
               onChange={(e) => setSongMetadata(prev => ({ ...prev, artist_name: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="upload-input"
               placeholder="Enter artist name"
               disabled={uploading}
             />
           </div>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="upload-form-group">
+          <label className="upload-label">
             Genre
           </label>
           <select
             value={songMetadata.genre}
             onChange={(e) => setSongMetadata(prev => ({ ...prev, genre: e.target.value }))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="upload-select genre-select"
+            style={{
+              backgroundColor: 'white',
+              border: '1px solid #D1D5DB',
+              color: '#111827'
+            }}
             disabled={uploading}
           >
             <option value="pop">Pop</option>
@@ -209,18 +212,11 @@ export default function SongUpload({ onUploadSuccess }: SongUploadProps) {
       {/* Upload Dropzone */}
       <div
         {...getRootProps()}
-        className={`
-          relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200
-          ${isDragActive 
-            ? 'border-blue-500 bg-blue-50 scale-105' 
-            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-          }
-          ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
-        `}
+        className={`upload-dropzone ${isDragActive ? 'drag-active' : ''} ${uploading ? 'uploading' : ''}`}
       >
         <input {...getInputProps()} />
         
-        <div className="flex flex-col items-center">
+        <div className="upload-dropzone-content">
           {uploading ? (
             <>
               <Loader className="h-16 w-16 text-blue-500 animate-spin mb-4" />
@@ -237,25 +233,24 @@ export default function SongUpload({ onUploadSuccess }: SongUploadProps) {
             </>
           ) : (
             <>
-              <Music className="h-16 w-16 text-gray-400 mb-6" />
               {isDragActive ? (
-                <p className="text-xl font-medium text-blue-600">
+                  <p className="upload-title text-blue-600">
                   Drop your song here! 
                 </p>
               ) : (
                 <>
-                  <p className="text-xl font-medium text-gray-900 mb-2">
+                    <p className="upload-title">
                     Drag & drop your song here
                   </p>
-                  <p className="text-gray-500 mb-4">
+                    <p className="upload-subtitle-text">
                     or click to browse files
                   </p>
-                  <div className="flex items-center space-x-2 text-sm text-gray-400">
+                    <div className="upload-file-types">
                     <span>Supports:</span>
-                    <span className="bg-gray-100 px-2 py-1 rounded">MP3</span>
-                    <span className="bg-gray-100 px-2 py-1 rounded">WAV</span>
-                    <span className="bg-gray-100 px-2 py-1 rounded">M4A</span>
-                    <span className="bg-gray-100 px-2 py-1 rounded">FLAC</span>
+                      <span className="upload-file-type-tag">MP3</span>
+                      <span className="upload-file-type-tag">WAV</span>
+                      <span className="upload-file-type-tag">M4A</span>
+                      <span className="upload-file-type-tag">FLAC</span>
                   </div>
                 </>
               )}
@@ -266,12 +261,12 @@ export default function SongUpload({ onUploadSuccess }: SongUploadProps) {
 
       {/* Error Display */}
       {error && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-400 mr-3" />
+        <div className="upload-error">
+          <div className="upload-error-content">
+            <AlertCircle className="upload-error-icon" />
             <div>
-              <p className="text-sm text-red-800">{error}</p>
-              <p className="text-xs text-red-600 mt-1">
+              <p className="upload-error-text">{error}</p>
+              <p className="upload-error-details">
                 Check browser console for more details
               </p>
             </div>

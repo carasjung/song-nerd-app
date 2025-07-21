@@ -29,11 +29,23 @@ interface AnalyticsData {
   avgConfidence: number;
 }
 
+interface SongAnalysis {
+  song_id: string;
+  top_platform: string;
+  target_audience: string;
+  marketing_recommendations: string;
+  overall_confidence: number;
+  created_at: string;
+}
+
 export default function ArtistProfile() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('analytics');
+  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const [songAnalysis, setSongAnalysis] = useState<SongAnalysis | null>(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -162,6 +174,67 @@ export default function ArtistProfile() {
     avgConfidence: 0.87,
   });
 
+  const fetchSongAnalysis = async (songId: string) => {
+    setLoadingAnalysis(true);
+    try {
+      const { data: analysis, error } = await supabase
+        .from('marketing_insights')
+        .select('*')
+        .eq('song_id', songId)
+        .single();
+
+      console.log('🔍 Fetched analysis data:', analysis);
+      console.log('🔍 Analysis keys:', analysis ? Object.keys(analysis) : 'No data');
+
+      if (error) {
+        console.error('Error fetching song analysis:', error);
+        // Create mock analysis for demo
+        setSongAnalysis({
+          song_id: songId,
+          top_platform: 'Spotify',
+          target_audience: 'Young adults (18-25) interested in indie music',
+          marketing_recommendations: 'Focus on Spotify playlists and social media promotion. Consider collaborating with indie music influencers.',
+          overall_confidence: 0.85,
+          created_at: new Date().toISOString()
+        });
+      } else {
+        // Ensure all required fields are present
+        const completeAnalysis = {
+          song_id: analysis?.song_id || songId,
+          top_platform: analysis?.top_platform || 'Spotify',
+          target_audience: analysis?.target_audience || 'Young adults (18-25) interested in indie music',
+          marketing_recommendations: analysis?.marketing_recommendations || 'Focus on Spotify playlists and social media promotion. Consider collaborating with indie music influencers.',
+          overall_confidence: analysis?.overall_confidence || 0.85,
+          created_at: analysis?.created_at || new Date().toISOString()
+        };
+        setSongAnalysis(completeAnalysis);
+      }
+    } catch (error) {
+      console.error('Error fetching song analysis:', error);
+      // Create mock analysis for demo
+      setSongAnalysis({
+        song_id: songId,
+        top_platform: 'TikTok',
+        target_audience: 'Teenagers and young adults (13-24)',
+        marketing_recommendations: 'Create short-form content for TikTok. Use trending hashtags and collaborate with content creators.',
+        overall_confidence: 0.92,
+        created_at: new Date().toISOString()
+      });
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  };
+
+  const handleSongClick = (song: Song) => {
+    setSelectedSong(song);
+    fetchSongAnalysis(song.id);
+  };
+
+  const handleBackToSongs = () => {
+    setSelectedSong(null);
+    setSongAnalysis(null);
+  };
+
   // Mock performance data
   const performanceData = [
     { month: 'Jan', plays: 1200, engagement: 85 },
@@ -212,79 +285,21 @@ export default function ArtistProfile() {
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-bold text-gray-900">Artist Dashboard</h1>
+            <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        {/* Profile Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white mb-8">
-          <div className="flex items-center">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mr-6">
-              <User className="h-10 w-10" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold mb-2">Welcome back, Artist!</h2>
-              <p className="text-blue-100">Track your music's marketing performance</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center">
-              <Music className="h-8 w-8 text-blue-500 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{songs.length}</p>
-                <p className="text-gray-600">Songs Analyzed</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center">
-              <Eye className="h-8 w-8 text-green-500 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{totalPlays.toLocaleString()}</p>
-                <p className="text-gray-600">Total Plays</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center">
-              <Heart className="h-8 w-8 text-red-500 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{Math.round(avgEngagement)}%</p>
-                <p className="text-gray-600">Avg Engagement</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-purple-500 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {analytics ? Math.round(analytics.avgConfidence * 100) : 0}%
-                </p>
-                <p className="text-gray-600">Avg Confidence</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Tabs */}
         <div className="bg-white rounded-xl shadow-lg mb-8">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
-              {['overview', 'songs', 'analytics'].map((tab) => (
+              {['analytics', 'songs'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${
+                  className={`py-4 px-1 border-b-2 font-medium text-sm capitalize cursor-pointer ${
                     activeTab === tab
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -297,113 +312,35 @@ export default function ArtistProfile() {
           </div>
 
           <div className="p-6">
-            {activeTab === 'overview' && (
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Performance Overview</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="plays" stroke="#3B82F6" strokeWidth={2} />
-                      <Line type="monotone" dataKey="engagement" stroke="#10B981" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Most Successful Genre</h4>
-                    <p className="text-2xl font-bold text-blue-600 capitalize">
-                      {topGenres[0]?.genre || 'N/A'}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {topGenres[0]?.count || 0} songs analyzed
-                    </p>
-                  </div>
-
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Top Platform</h4>
-                    <p className="text-2xl font-bold text-green-600">
-                      {platformPerformance[0]?.platform || 'N/A'}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {platformPerformance[0]?.successRate || 0}% success rate
-                    </p>
-                  </div>
-
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Analysis Complete</h4>
-                    <p className="text-2xl font-bold text-purple-600">
-                      {songs.filter(s => s.processing_status === 'completed').length}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      of {songs.length} total songs
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'songs' && (
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Your Songs</h3>
-                {songs.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Music className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">No songs uploaded yet</p>
-                    <p className="text-sm text-gray-500">Upload your first song to get started with AI analysis</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {songs.map((song) => (
-                      <div key={song.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold mr-4">
-                              <Music className="h-6 w-6" />
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{song.title}</h4>
-                              <p className="text-gray-600 capitalize">{song.genre}</p>
-                              {song.file_size && (
-                                <p className="text-xs text-gray-500">
-                                  {(song.file_size / (1024 * 1024)).toFixed(1)} MB
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <div className="text-right">
-                              <p className="text-sm text-gray-500">Created</p>
-                              <p className="font-medium">{new Date(song.created_at).toLocaleDateString()}</p>
-                            </div>
-                            <span className={`px-3 py-1 rounded-full text-sm ${
-                              song.processing_status === 'completed' 
-                                ? 'bg-green-100 text-green-800' 
-                                : song.processing_status === 'processing'
-                                ? 'bg-blue-100 text-blue-800'
-                                : song.processing_status === 'failed'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {song.processing_status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             {activeTab === 'analytics' && (
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Detailed Analytics</h3>
+                
+                {/* Summary Stats - Now first */}
+                {analytics && (
+                  <div className="mb-6 border border-gray-200 rounded-lg p-6">
+                    <h4 className="font-semibold text-gray-900 mb-4">Summary Stats</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600">{analytics.totalAnalyzed}</p>
+                        <p className="text-sm text-gray-600">Songs with AI insights</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">
+                          {Math.round(analytics.avgConfidence * 100)}%
+                        </p>
+                        <p className="text-sm text-gray-600">Average confidence score</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-orange-600">
+                          {Object.keys(analytics.genreStats).length}
+                        </p>
+                        <p className="text-sm text-gray-600">Different genres explored</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="border border-gray-200 rounded-lg p-6">
                     <h4 className="font-semibold text-gray-900 mb-4">Top Performing Genres</h4>
@@ -443,28 +380,159 @@ export default function ArtistProfile() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {analytics && (
-                  <div className="mt-6 border border-gray-200 rounded-lg p-6">
-                    <h4 className="font-semibold text-gray-900 mb-4">Summary Stats</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600">{analytics.totalAnalyzed}</p>
-                        <p className="text-sm text-gray-600">Songs with AI insights</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-600">
-                          {Math.round(analytics.avgConfidence * 100)}%
-                        </p>
-                        <p className="text-sm text-gray-600">Average confidence score</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-purple-600">
-                          {Object.keys(analytics.genreStats).length}
-                        </p>
-                        <p className="text-sm text-gray-600">Different genres explored</p>
+            {activeTab === 'songs' && (
+              <div>
+                {selectedSong ? (
+                  // Song Analysis Detail View
+                  <div>
+                    <div className="flex items-center mb-6">
+                      <button
+                        onClick={handleBackToSongs}
+                        className="flex items-center text-blue-600 hover:text-blue-800 mr-4 cursor-pointer"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back to Songs
+                      </button>
+                      <h3 className="text-xl font-bold text-gray-900">Song Analysis</h3>
+                    </div>
+
+                    {/* Song Info */}
+                    <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                      <div className="flex items-center">
+                        <div className="w-16 h-16 rounded-lg flex items-center justify-center mr-4 shadow-sm">
+                          <img src="/song-icon.png" alt="Song Icon" className="h-14 w-14" />
+                        </div>
+                        <div>
+                          <h4 className="text-2xl font-bold text-gray-900">{selectedSong.title}</h4>
+                          <p className="text-gray-600 capitalize">{selectedSong.genre}</p>
+                          <p className="text-sm text-gray-500">
+                            Created: {new Date(selectedSong.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Analysis Content */}
+                    {loadingAnalysis ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : songAnalysis ? (
+                      <div className="space-y-6">
+                        {/* Top Platform */}
+                        <div className="border border-gray-200 rounded-lg p-6">
+                          <h4 className="font-semibold text-gray-900 mb-3">Top Platform</h4>
+                          <div className="flex items-center">
+                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                              <span className="text-blue-600 font-bold text-lg">
+                                {songAnalysis.top_platform.charAt(0)}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-xl font-semibold text-gray-900">{songAnalysis.top_platform}</p>
+                              <p className="text-sm text-gray-600">Recommended platform for marketing</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Target Audience */}
+                        <div className="border border-gray-200 rounded-lg p-6">
+                          <h4 className="font-semibold text-gray-900 mb-3">Target Audience</h4>
+                          <p className="text-gray-700 leading-relaxed">
+                            {songAnalysis.target_audience || 'Target audience analysis not available yet.'}
+                          </p>
+                        </div>
+
+                        {/* Marketing Recommendations */}
+                        <div className="border border-gray-200 rounded-lg p-6">
+                          <h4 className="font-semibold text-gray-900 mb-3">Marketing Recommendations</h4>
+                          <p className="text-gray-700 leading-relaxed">
+                            {songAnalysis.marketing_recommendations || 'Marketing recommendations not available yet.'}
+                          </p>
+                        </div>
+
+                        {/* Confidence Score */}
+                        <div className="border border-gray-200 rounded-lg p-6">
+                          <h4 className="font-semibold text-gray-900 mb-3">Analysis Confidence</h4>
+                          <div className="flex items-center">
+                            <div className="flex-1 bg-gray-200 rounded-full h-3 mr-4">
+                              <div 
+                                className="bg-green-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round(songAnalysis.overall_confidence * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-lg font-semibold text-green-600">
+                              {Math.round(songAnalysis.overall_confidence * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-gray-600">No analysis available for this song</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Songs List View
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Your Songs</h3>
+                    {songs.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Music className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 mb-4">No songs uploaded yet</p>
+                        <p className="text-sm text-gray-500">Upload your first song to get started with AI analysis</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {songs.map((song) => (
+                          <div 
+                            key={song.id} 
+                            className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => handleSongClick(song)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className="w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-sm">
+                                  <img src="/song-icon.png" alt="Song Icon" className="h-11 w-11" />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-900">{song.title}</h4>
+                                  <p className="text-gray-600 capitalize">{song.genre}</p>
+                                  {song.file_size && (
+                                    <p className="text-xs text-gray-500">
+                                      {(song.file_size / (1024 * 1024)).toFixed(1)} MB
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                <div className="text-right">
+                                  <p className="text-sm text-gray-500">Created</p>
+                                  <p className="font-medium">{new Date(song.created_at).toLocaleDateString()}</p>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-sm ${
+                                  song.processing_status === 'completed' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : song.processing_status === 'processing'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : song.processing_status === 'failed'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {song.processing_status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
