@@ -44,7 +44,7 @@
 
 ## Architecture Overview
 
-![Architecture Diagram](public/architecture.png)
+<img src="public/architecture.png" alt="Architecture Diagram" width="500" />
 
 *System flow: User uploads a song via the frontend, which stores files in Supabase and triggers the backend for ML analysis. Results are stored and visualized in the user dashboard.*
 
