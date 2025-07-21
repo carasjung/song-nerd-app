@@ -44,18 +44,9 @@
 
 ## Architecture Overview
 
-```mermaid
-graph TD;
-  A[User Uploads Song] --> B[Frontend (Next.js)]
-  B -->|File & Metadata| C[Supabase Storage/DB]
-  B -->|Trigger| D[Backend API (FastAPI)]
-  D -->|Fetches File| C
-  D -->|Runs ML Analysis| E[ML Models]
-  E -->|Results| D
-  D -->|Stores Results| C
-  B -->|Fetches Results| C
-  B -->|Displays Insights| F[User Dashboard]
-```
+![Architecture Diagram](public/architecture.png)
+
+*System flow: User uploads a song via the frontend, which stores files in Supabase and triggers the backend for ML analysis. Results are stored and visualized in the user dashboard.*
 
 ---
 
